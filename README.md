@@ -17,7 +17,10 @@ mpl_toolkits
 # Description
 
 
-The Irish Soil Information System data are Shapefiles (.shp) containing location of associations of soil from the sampling (or series) collected around Ireland. Unfortunately these Shapefiles do not contain sand and clay fraction however it can be found using other informations available on the 
+The Irish Soil Information System data are Shapefiles (.shp) containing location of associations of soil from the sampling (or series) collected around Ireland. Unfortunately these Shapefiles do not contain sand and clay fraction however it can be found using other informations available on the Irish Soil Information System website (http://soils.teagasc.ie)
+
+
+The repository is divided in different subfolders
 
 
 To gain computational time it is recommended to use the gdal_translate (https://gdal.org/programs/gdal_translate.html) command:
