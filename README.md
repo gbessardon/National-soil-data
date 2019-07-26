@@ -3,7 +3,9 @@
 This repository contains all the procedure and the file necessary to the procedure to convert Irish Soil Information System data (http://soils.teagasc.ie) into a SURFEX (https://www.umr-cnrm.fr/surfex/) file input.
 
 
-#Requirements
+# Requirements
+
+
 numpy
 shapefile
 pyproj
@@ -12,7 +14,9 @@ osgeo
 matplotlib
 mpl_toolkits
 
-#Description
+# Description
+
+
 The Irish Soil Information System data are Shapefiles (.shp) containing location of associations of soil from the sampling (or series) collected around Ireland. Unfortunately these Shapefiles do not contain sand and clay fraction however it can be found using other informations available on the 
 
 
