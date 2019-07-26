@@ -5,16 +5,16 @@ Created on Thu May 16 09:33:08 2019
 @author: gbessardon
 """
 
-from mpl_toolkits.basemap import Basemap
-import matplotlib.pyplot as plt
+
 import numpy as np
-#import pandas as pd
 import shapefile as shp
 from pyproj import Proj
+import sys
 
 import teagasc_soil_series as tss
 import teagasc_asso_to_series as tats
 import save_tiff as st
+import read_config as config
 
 def get_filepaths(directory,string):
     file_paths = []  # List which will store all of the full filepaths.
@@ -37,13 +37,7 @@ def read_shapefile(sf):
     asso_unit = [r[1] for r in records]
     Association_1 = [r[2] for r in records]
     Association_2= [r[3] for r in records]
-#    url = [r[6] for r in records]
-#    shape_ex=[sf.shape(i) for i in range(0,len(shps))]
-##converting shapefile data into pandas dataframe
-#    df = pd.DataFrame(columns=fields, data=records)
-#
-##assigning the coordinates
-#    df = df.assign(coords=shps)
+
     return fields,records,shps, Association_1,Association_2, asso_unit
     
 
@@ -108,14 +102,55 @@ def putonthegrid(x_ind,y_ind,var,Val):
                     Val[ux,uy]=np.mean(A[~np.isnan(A)])
     
     return(Val)
+    
+def generate_grid(lonmin,lonmax,latmin,latmax,Pix):
+    Upper_Left = np.array([lonmin,latmax])
+    Lower_Right= np.array([lonmax,latmin])
+    Pixel_Size = np.array([Pix,-Pix])
 
-fn='/home/gbessardon/national_soils/SOIL_SISNationalSoils_shp/Data/SOIL_SISNationalSoils_Shp/SOIL_SISNationalSoils.shp'
+    xres = Pixel_Size[0]    
+    yres = Pixel_Size[1]
+
+    xmin = Upper_Left[0] 
+    ymin = Lower_Right[1]
+
+
+    xmax = Lower_Right[0] 
+    ymax = Upper_Left[1]
+
+    if xres>0:
+        X=np.arange(xmin,xmax,xres)
+    else:
+        X=np.arange(xmax,xmin,xres)
+    
+    if yres<0:
+        Y=np.arange(ymax,ymin,yres)
+    else:
+        Y=np.arange(ymin,ymax,yres)
+        
+    return(X,Y)
+
+
+
+
+
+#########################MAIN##################################################
+
+fn='config.cfg'
+(Shp_name,Fasso,Fse,lonmin,lonmax,latmin,latmax,projection,ellipse,lat0,lon0,
+ x0,y0,k0,Pix,fnsand,fnclay)=config.readconf(fn)
+
+#check configuration
+if lonmin>=lonmax:
+    sys.exit("ERROR min longitude>= max longitude")
+if latmin>=latmax:
+    sys.exit("ERROR min latgitude>= max latgitude")
+
 #read the shapefile
-sf=shp.Reader(fn)    
+sf=shp.Reader(Shp_name)    
 fields,records,shps,  Association_1,Association_2, asso_unit= read_shapefile(sf)
-indices=np.arange(0,50)
 #generates a function to convert the prjected data (needs a function to read it in the Readme.txt)
-pnyc = Proj(proj='tmerc',ellps='GRS80',lat_0=53.5,lon_0=-8, x_0=200000, y_0=250000, k_0=1.000035)
+pnyc = Proj(proj=projection,ellps=ellipse,lat_0=lat0,lon_0=lon0, x_0=x0, y_0=y0, k_0=k0)
 #+a 	Semimajor radius of the ellipsoid axis
 #+axis 	Axis orientation
 #+b 	Semiminor radius of the ellipsoid axis
@@ -132,74 +167,42 @@ pnyc = Proj(proj='tmerc',ellps='GRS80',lat_0=53.5,lon_0=-8, x_0=200000, y_0=2500
 #+vunits 	vertical units.
 #+x_0 	False easting
 #+y_0 	False northing
-#plt_map_fill(indices,sf,'terrain','map_soil_epa_database.jpg',(40,60) )
-#uniq,seen=remove_duplicates(asso_unit)
-#idi=np.where(np.array(Association_1)=='Elton')[0]
-#idi2=np.where(np.array(Association_2)=='Elton')[0]
-#plt_map_fill(idi,sf,plt.cm.jet_r,'test.png')
+
 
 
 #get the series corresponding to the association name
-fnass='/home/gbessardon/national_soils/get_all_associations.php'
-natIDass,placeID,corres_asso=tats.getasso_serie(fnass)            
+natIDass,placeID,corres_asso=tats.getasso_serie(Fasso)            
 #get the clay,sand, silt fraction in the series
-fseries='/home/gbessardon/national_soils/get_all_series.php'
-natID,sand,clay,silt=tss.siltclaysand_series(fseries)
+natID,sand,clay,silt=tss.siltclaysand_series(Fse)
 
 #associate the clay, silt, with place and association
 sandass=np.zeros(natIDass.shape)*np.nan
 clayass=np.zeros(natIDass.shape)*np.nan
-siltass=np.zeros(natIDass.shape)*np.nan
+#siltass=np.zeros(natIDass.shape)*np.nan
 for i,n in enumerate(natIDass):
     indice=np.where(n==natID)[0]
     if len(indice)>0:
         sandass[i]=sand[indice[0]]
         clayass[i]=clay[indice[0]]
-        siltass[i]=silt[indice[0]]
-
+#        siltass[i]=silt[indice[0]]
 clayshp=np.zeros(np.array(asso_unit).shape)*np.nan
 sandshp=np.zeros(np.array(asso_unit).shape)*np.nan
-siltshp=np.zeros(np.array(asso_unit).shape)*np.nan
+#siltshp=np.zeros(np.array(asso_unit).shape)*np.nan
 for i,c in enumerate(corres_asso):
     ind=np.where(c==np.array(asso_unit))
     clayshp[ind]=clayass[i]
     sandshp[ind]=sandass[i]
-    siltshp[ind]=siltass[i]
+
 
 ###############################################################################
 #################### REGRID POINTS ############################################
 ###############################################################################
-# Origin and Pixel size selected via gdalinfo on the soilgrid tif file
-Upper_Left = np.array([-15.000026399928572,60.001254378989621])
-Lower_Right= np.array([-5.0000280,50.0012560])
-Pixel_Size = np.array([0.002083333000001,-0.002083333000001])
-
-xres = Pixel_Size[0]    
-yres = Pixel_Size[1]
-
-xmin = Upper_Left[0] 
-ymin = Lower_Right[1]
 
 
-xmax = Lower_Right[0] 
-ymax = Upper_Left[1]
+(X,Y)=generate_grid(lonmin,lonmax,latmin,latmax,Pix)
 
-if xres>0:
-    X=np.arange(xmin,xmax,xres)
-else:
-    X=np.arange(xmax,xmin,xres)
-    
-if yres<0:
-    Y=np.arange(ymax,ymin,yres)
-else:
-    Y=np.arange(ymin,ymax,yres)
-Xlist=[]
-Ylist=[]
-#claylist=[] 
-#sandlist=[]
-#siltlist=[]
 Sand=np.zeros((X.shape[0],Y.shape[0]))*np.nan    
-#Clay=np.zeros((X.shape[0],Y.shape[0]))*np.nan  
+Clay=np.zeros((X.shape[0],Y.shape[0]))*np.nan  
 for j,_ in enumerate(Association_2) :
     shape_ex = sf.shape(j)
     x_lon = np.zeros(len(shape_ex.points))
@@ -216,6 +219,12 @@ for j,_ in enumerate(Association_2) :
         y_ind[k]=int(np.argmin(np.abs(lats[k]-Y)))    
     
     Sand=putonthegrid(x_ind,y_ind,sandshp[j],Sand)
-#    Clay=putonthegrid(x_ind,y_ind,sandshp[j],Clay)
+    Clay=putonthegrid(x_ind,y_ind,clayshp[j],Clay)
     
-st.Savetiff(Sand,X,Y,'test.tif')                        
+st.Savetiff(Sand,X,Y,fnsand)
+st.Savetiff(Clay,X,Y,fnclay)
+
+
+                
+        
+        
