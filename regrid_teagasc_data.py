@@ -138,7 +138,7 @@ def generate_grid(lonmin,lonmax,latmin,latmax,Pix):
 
 fn='config.cfg'
 (Shp_name,Fasso,Fse,lonmin,lonmax,latmin,latmax,projection,ellipse,lat0,lon0,
- x0,y0,k0,Pix,fnsand,fnclay)=config.readconf(fn)
+ x0,y0,k0,Pix,fnsand,fnclay,nodata)=config.readconf(fn)
 
 #check configuration
 if lonmin>=lonmax:
@@ -221,8 +221,8 @@ for j,_ in enumerate(Association_2) :
     Sand=putonthegrid(x_ind,y_ind,sandshp[j],Sand)
     Clay=putonthegrid(x_ind,y_ind,clayshp[j],Clay)
     
-st.Savetiff(Sand,X,Y,fnsand)
-st.Savetiff(Clay,X,Y,fnclay)
+st.Savetiff(Sand,X,Y,fnsand,nodata)
+st.Savetiff(Clay,X,Y,fnclay,nodata)
 
 
                 
