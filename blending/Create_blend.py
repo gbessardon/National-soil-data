@@ -14,8 +14,8 @@ from mpl_toolkits.basemap import Basemap
 import numpy as np
 from pyproj import Proj
 from scipy.interpolate import griddata
-import multiprocessing as mp
 import save_tiff as st
+import read_config_blending as rcb
 
 #plt.switch_backend('agg')
 
@@ -50,7 +50,7 @@ def get_data(fn,maskn):
     else:
         D=np.ma.masked_where(np.where(np.isnan(data)==1),data)
     
-    return (Xp,Yp,D)
+    return (Xp,Yp,D,xres,yres)
     
     
 def Coarsendata(dataclayt,datasandt,dataclayh,datasandh):
@@ -93,113 +93,26 @@ def Blenddata(dataclay,datasand,dataclayt,datasandt):
     return (Clayblend_mask,Sandblend_mask)
 
 
+#read_the_configuration_file
+fn='config_blending.cfg'
+(Sand_ref,Clay_ref,Sand_nat,Clay_nat,noref,nonat,fnsand,fnclay)=rcb.readconf(fn)
+
+
 
 # Get the data    
-gdal.UseExceptions()
-fname = '/home/gbessardon/SOILGRID/soilgrid_sand_ireland.tif' 
-(Xp,Yp,datasand)=get_data(fname,0)
-fclay = '/home/gbessardon/SOILGRID/soilgrid_clay_ireland.tif' 
-(Xc,Yc,dataclay)=get_data(fclay,0)
+gdal.UseExceptions() 
+(Xrefs,Yrefs,sandref,xresref,yresref)=get_data(Sand_ref,nonat) 
+(Xrefc,Yrefc,clayref,xresref,yresref)=get_data(Clay_ref,noref)
 
-fnamet = '/home/gbessardon/python_scripts/teagasc/test_sand.tif' 
-(Xpt,Ypt,datasandt)=get_data(fnamet,0)
-fclayt = '/home/gbessardon/python_scripts/teagasc/test_clay.tif' 
-(Xct,Yct,dataclayt)=get_data(fclayt,0)
+(Xnats,Ynats,sandnat,xresnat,yresnat)=get_data(Sand_nat,nonat) 
+(Xnatc,Ynatc,claynat,xresnat,yresnat)=get_data(Clay_nat,nonat)
 
-(Clayblend_mask,Sandblend_mask)=Blenddata(dataclay,datasand,dataclayt,datasandt)
-
-st.Savetiff(Clayblend_mask,Xc,Yc,'Soilgrid_blend_clay.tif',0) 
-st.Savetiff(Sandblend_mask,Xc,Yc,'Soilgrid_blend_sand.tif',0)   
-#print('ok1')
-
-print('ok')
-
-fig = plt.figure(figsize=(40, 40))
-ax1=fig.add_subplot(131)
-m = Basemap(projection='merc',llcrnrlon=np.min(Xc),llcrnrlat=np.min(Yc),
-            urcrnrlat=np.max(Yc),urcrnrlon=np.max(Xc),resolution='c',ax=ax1)
-m.drawcountries()
-m.drawcoastlines(linewidth=.5)
-m.drawmeridians(np.arange(-15,-5,2),color='k', linewidth=1.0)
-m.drawparallels(np.arange(50,60,1),color='k', linewidth=1.0)
-Xm,Ym=m(Xc,Yc)
-c1=m.pcolormesh(Xm, Ym, Clayblend_mask, cmap=plt.cm.afmhot,vmin=0,vmax=50)
-ax1.set_title('Clay blend Teagasc SOILGRID')
-
-ax2=fig.add_subplot(132)
-m = Basemap(projection='merc',llcrnrlon=np.min(Xct),llcrnrlat=np.min(Yct),
-            urcrnrlat=np.max(Yct),urcrnrlon=np.max(Xct),resolution='c',ax=ax2)
-m.drawcountries()
-m.drawcoastlines(linewidth=.5)
-m.drawmeridians(np.arange(-15,-5,2),color='k', linewidth=1.0)
-m.drawparallels(np.arange(50,60,1),color='k', linewidth=1.0)
-Xm,Ym=m(Xct,Yct)
-c1=m.pcolormesh(Xm, Ym, dataclayt, cmap=plt.cm.afmhot,vmin=0,vmax=50)
-ax2.set_title('Clay Teagasc')
+if (xresref!=xresnat) or (yresref!=yresnat):
+	sandnat,claynat=Coarsendata(claynat,sandnat,clayref,sandref)
 
 
-ax3=fig.add_subplot(133)
-m = Basemap(projection='merc',llcrnrlon=np.min(Xc),llcrnrlat=np.min(Yc),
-            urcrnrlat=np.max(Yc),urcrnrlon=np.max(Xc),resolution='c',ax=ax3)
-m.drawcountries()
-m.drawcoastlines(linewidth=.5)
-m.drawmeridians(np.arange(-15,-5,2),color='k', linewidth=1.0)
-m.drawparallels(np.arange(50,60,1),color='k', linewidth=1.0)
-Xm,Ym=m(Xc,Yc)
-c1=m.pcolormesh(Xm, Ym, dataclay, cmap=plt.cm.afmhot,vmin=0,vmax=50)
-ax3.set_title('Clay SOILGRID')
-#
-fig.savefig('Blend_SOILGRID_teagasc.png')
+(Clayblend_mask,Sandblend_mask)=Blenddata(clayref,sandref,claynat,sandnat)
 
-
-
-fnameh = '/home/gbessardon/HWSD_v2/SAND_HWSD_v2_Ireland.tif' 
-(Xph,Yph,datasandh)=get_data(fnameh,255)
-fclayh = '/home/gbessardon/HWSD_v2/CLAY_HWSD_v2_Ireland.tif' 
-(Xch,Ych,dataclayh)=get_data(fclayh,255)
-
-
-dataclaytcoarse_m,datasandtcoarse_m=Coarsendata(dataclayt,datasandt,dataclayh,datasandh)
-(Clayblend_mask2,Sandblend_mask2)=Blenddata(dataclayh,datasandh,dataclaytcoarse_m,datasandtcoarse_m)
-
-fig = plt.figure(figsize=(40, 40))
-ax1=fig.add_subplot(131)
-m = Basemap(projection='merc',llcrnrlon=np.min(Xch),llcrnrlat=np.min(Ych),
-            urcrnrlat=np.max(Ych),urcrnrlon=np.max(Xch),resolution='c',ax=ax1)
-m.drawcountries()
-m.drawcoastlines(linewidth=.5)
-m.drawmeridians(np.arange(-15,-5,2),color='k', linewidth=1.0)
-m.drawparallels(np.arange(50,60,1),color='k', linewidth=1.0)
-Xm,Ym=m(Xch,Ych)
-c1=m.pcolormesh(Xm, Ym, Clayblend_mask2, cmap=plt.cm.afmhot,vmin=0,vmax=50)
-ax1.set_title('Clay blend Teagasc coarse HWSD')
-#
-#
-ax2=fig.add_subplot(132)
-m = Basemap(projection='merc',llcrnrlon=np.min(Xch),llcrnrlat=np.min(Ych),
-            urcrnrlat=np.max(Ych),urcrnrlon=np.max(Xch),resolution='c',ax=ax2)
-m.drawcountries()
-m.drawcoastlines(linewidth=.5)
-m.drawmeridians(np.arange(-15,-5,2),color='k', linewidth=1.0)
-m.drawparallels(np.arange(50,60,1),color='k', linewidth=1.0)
-Xm,Ym=m(Xch,Ych)
-c1=m.pcolormesh(Xm, Ym, dataclaytcoarse_m, cmap=plt.cm.afmhot,vmin=0,vmax=50)
-ax2.set_title('Clay Teagasc coarse')
-
-
-ax3=fig.add_subplot(133)
-m = Basemap(projection='merc',llcrnrlon=np.min(Xch),llcrnrlat=np.min(Ych),
-            urcrnrlat=np.max(Ych),urcrnrlon=np.max(Xch),resolution='c',ax=ax3)
-m.drawcountries()
-m.drawcoastlines(linewidth=.5)
-m.drawmeridians(np.arange(-15,-5,2),color='k', linewidth=1.0)
-m.drawparallels(np.arange(50,60,1),color='k', linewidth=1.0)
-Xm,Ym=m(Xch,Ych)
-c1=m.pcolormesh(Xm, Ym, dataclayh, cmap=plt.cm.afmhot,vmin=0,vmax=50)
-ax3.set_title('Clay HWSD')
-
-fig.savefig('Blend_HWSD_teagasc.png')
-
-st.Savetiff(Clayblend_mask2,Xch,Ych,'HWSD_blend_clay_test.tif',255) 
-st.Savetiff(Sandblend_mask2,Xch,Ych,'HWSD_blend_sand_test.tif',255)
+st.Savetiff(Clayblend_mask,Xrefc,Yrefc,fnclay,noref) 
+st.Savetiff(Sandblend_mask,Xrefs,Yrefs,fnsand,noref)   
 
