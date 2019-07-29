@@ -221,8 +221,8 @@ for j,_ in enumerate(Association_2) :
     Sand=putonthegrid(x_ind,y_ind,sandshp[j],Sand)
     Clay=putonthegrid(x_ind,y_ind,clayshp[j],Clay)
     
-st.Savetiff(Sand,X,Y,fnsand.T,nodata)
-st.Savetiff(Clay,X,Y,fnclay.T,nodata)
+st.Savetiff(Sand.T,X,Y,fnsand,nodata)
+st.Savetiff(Clay.T,X,Y,fnclay,nodata)
 
 
                 
