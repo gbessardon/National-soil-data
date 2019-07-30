@@ -37,8 +37,8 @@ south easterly points), and store the outputfile.tif file in the input_file dire
 2. Conversion of the national data to the desired grid:
 
 
-
-
+3. Blend of the national data with the reference dataset:
+Here we simply fill the national dataset gap using the national dataset
 
 Create_blend.py has two functions:
 -Corsendata when needed reduce the data of an higher resolution data to a lower res-
@@ -47,3 +47,8 @@ resolution grid value in the coarser grid box. It assumes that the extent of bot
 are the same.
 
 Blendata Fills the gap in the national data using the reference dataset to fill the gap
+
+4. 
+
+
+
