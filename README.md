@@ -35,20 +35,13 @@ where -12 60 and -2 50 respectively the upper right and lower right points (or t
 south easterly points), and store the outputfile.tif file in the input_file directory and run the scripts using it.
 
 2. Conversion of the national data to the desired grid:
-
+run the file conversion_national_to_grid/regrid_teagasc_data.py with the parameters set in conversion_national_to_grid/config.cfg.
 
 3. Blend of the national data with the reference dataset:
-Here we simply fill the national dataset gap using the national dataset
+run the file blending/read_config_blending.py with parameter set in blending/config_blending.cfg.
 
-Create_blend.py has two functions:
--Corsendata when needed reduce the data of an higher resolution data to a lower res-
-olution data. The lower resolution values are defined by the average of all the higher
-resolution grid value in the coarser grid box. It assumes that the extent of both datasets
-are the same.
 
-Blendata Fills the gap in the national data using the reference dataset to fill the gap
-
-4. 
+4.Merge the newly created blend into the new dataset 
 
 
 
