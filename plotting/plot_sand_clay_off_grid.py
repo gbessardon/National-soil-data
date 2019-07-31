@@ -14,7 +14,8 @@ from pyproj import Proj
 
 import teagasc_soil_series as tss
 import teagasc_asso_to_series as tats
-
+import read_config as rc 
+plt.switch_backend('agg')
 def get_filepaths(directory,string):
     file_paths = []  # List which will store all of the full filepaths.
     for root, directories, files in os.walk(directory):
@@ -82,13 +83,14 @@ def remove_duplicates(lista):
     return uniq,seen
     
 
-fn='/home/gbessardon/national_soils/SOIL_SISNationalSoils_shp/Data/SOIL_SISNationalSoils_Shp/SOIL_SISNationalSoils.shp'
+fnconf='config.cfg'
+(Shp_name,Fasso,Fse,lonmin,lonmax,latmin,latmax,projection,ellipse,lat0,lon0,x0,y0,k0,fnsand,fnclay)=rc.readconf(fnconf)
 #read the shapefile
-sf=shp.Reader(fn)    
+sf=shp.Reader(Shp_name)    
 fields,records,shps,  Association_1,Association_2, asso_unit= read_shapefile(sf)
 indices=np.arange(0,50)
 #generates a function to convert the prjected data (needs a function to read it in the Readme.txt)
-pnyc = Proj(proj='tmerc',ellps='GRS80',lat_0=53.5,lon_0=-8, x_0=200000, y_0=250000, k_0=1.000035)
+pnyc = Proj(proj=projection,ellps=ellipse,lat_0=lat0,lon_0=lon0, x_0=x0, y_0=y0, k_0=k0)
 #+a 	Semimajor radius of the ellipsoid axis
 #+axis 	Axis orientation
 #+b 	Semiminor radius of the ellipsoid axis
@@ -105,19 +107,13 @@ pnyc = Proj(proj='tmerc',ellps='GRS80',lat_0=53.5,lon_0=-8, x_0=200000, y_0=2500
 #+vunits 	vertical units.
 #+x_0 	False easting
 #+y_0 	False northing
-#plt_map_fill(indices,sf,'terrain','map_soil_epa_database.jpg',(40,60) )
 uniq,seen=remove_duplicates(asso_unit)
-idi=np.where(np.array(Association_1)=='Elton')[0]
-idi2=np.where(np.array(Association_2)=='Elton')[0]
-#plt_map_fill(idi,sf,plt.cm.jet_r,'test.png')
 
 
 #get the series corresponding to the association name
-fnass='/home/gbessardon/national_soils/get_all_associations.php'
-natIDass,placeID,corres_asso=tats.getasso_serie(fnass)            
+natIDass,placeID,corres_asso=tats.getasso_serie(Fasso)            
 #get the clay,sand, silt fraction in the series
-fseries='/home/gbessardon/national_soils/get_all_series.php'
-natID,sand,clay,silt=tss.siltclaysand_series(fseries)
+natID,sand,clay,silt=tss.siltclaysand_series(Fse)
 
 #associate the clay, silt, with place and association
 sandass=np.zeros(natIDass.shape)*np.nan
@@ -140,16 +136,16 @@ for i,c in enumerate(corres_asso):
     siltshp[ind]=siltass[i]
 
 
+clayshp[np.isnan(clayshp)]=255
+D=np.ma.masked_where(clayshp==255,clayshp)
 
-fig = plt.figure()
+fig = plt.figure(figsize=(40, 20))
 ax1=fig.gca()
-m = Basemap(projection='tmerc', lon_0=-8, lat_0=53.5,llcrnrlon=-11.7,llcrnrlat=51.1,
-            urcrnrlat=55.5,urcrnrlon=-5,resolution='c',ax=ax1)
-m.drawcountries()
-m.drawcoastlines(linewidth=.5)
+m = Basemap(projection='tmerc', lon_0=-8, lat_0=53.5,llcrnrlon=lonmin,llcrnrlat=latmin,
+            urcrnrlat=latmax,urcrnrlon=lonmax,resolution='c',ax=ax1)
 m.drawmeridians(np.arange(-10,-6,2),color='k', linewidth=1.0)
 m.drawparallels(np.arange(53,56,1),color='k', linewidth=1.0)
-colorsmap=plt.get_cmap(plt.cm.afmhot) 
+colorsmap=plt.get_cmap(plt.cm.rainbow) 
 for j,_ in enumerate(Association_2) :
     shape_ex = sf.shape(j)
     x_lon = np.zeros((len(shape_ex.points),1))
@@ -159,21 +155,28 @@ for j,_ in enumerate(Association_2) :
         y_lat[ip] = shape_ex.points[ip][1]
     lons,lats=pnyc(x_lon,y_lat,inverse=True)
     X,Y=m(lons,lats)
-    if not np.isnan(clayshp[j]):
-        plt.fill(X,Y,color=colorsmap(int(np.round(2.55*clayshp[j]))))
-    else:
-        plt.fill(X,Y,color=colorsmap(0))
-fig.savefig('teagasc_clay_test.png')    
+    if not np.ma.is_masked(D[j]):
+        plt.fill(X,Y,color=colorsmap(int(np.round(2.55*D[j]))))        
+    
+X=np.arange(0,100,10)
+Y=np.arange(0,100,10)
+Z=np.zeros((len(X),len(Y)))
+c=plt.pcolormesh(X,Y,Z,cmap=plt.cm.rainbow,vmin=0,vmax=100)
+cb=plt.colorbar(c)
+cb.ax.tick_params(labelsize=20)
+fig.savefig(fnclay,bbox_inches='tight',transparent=True)    
 
-fig = plt.figure()
+sandshp[np.isnan(sandshp)]=255
+D=np.ma.masked_where(sandshp==255,sandshp)
+
+fig = plt.figure(figsize=(40, 20))
 ax1=fig.gca()
 m = Basemap(projection='tmerc', lon_0=-8, lat_0=53.5,llcrnrlon=-11.7,llcrnrlat=51.1,
             urcrnrlat=55.5,urcrnrlon=-5,resolution='c',ax=ax1)
-m.drawcountries()
-m.drawcoastlines(linewidth=.5)
+
 m.drawmeridians(np.arange(-10,-6,2),color='k', linewidth=1.0)
 m.drawparallels(np.arange(53,56,1),color='k', linewidth=1.0)
-colorsmap=plt.get_cmap(plt.cm.afmhot) 
+colorsmap=plt.get_cmap(plt.cm.rainbow) 
 for j,_ in enumerate(Association_2) :
     shape_ex = sf.shape(j)
     x_lon = np.zeros((len(shape_ex.points),1))
@@ -183,35 +186,13 @@ for j,_ in enumerate(Association_2) :
         y_lat[ip] = shape_ex.points[ip][1]
     lons,lats=pnyc(x_lon,y_lat,inverse=True)
     X,Y=m(lons,lats)
-    if not np.isnan(clayshp[j]):
-        plt.fill(X,Y,color=colorsmap(int(np.round(2.55*sandshp[j]))))
-    else:
-        plt.fill(X,Y,color=colorsmap(0))
-fig.savefig('teagasc_sand_test.png')  
-
-fig = plt.figure()
-ax1=fig.gca()
-m = Basemap(projection='tmerc', lon_0=-8, lat_0=53.5,llcrnrlon=-11.7,llcrnrlat=51.1,
-            urcrnrlat=55.5,urcrnrlon=-5,resolution='c',ax=ax1)
-m.drawcountries()
-m.drawcoastlines(linewidth=.5)
-m.drawmeridians(np.arange(-10,-6,2),color='k', linewidth=1.0)
-m.drawparallels(np.arange(53,56,1),color='k', linewidth=1.0)
-colorsmap=plt.get_cmap(plt.cm.afmhot) 
-for j,_ in enumerate(Association_2) :
-    shape_ex = sf.shape(j)
-    x_lon = np.zeros((len(shape_ex.points),1))
-    y_lat = np.zeros((len(shape_ex.points),1))
-    for ip in range(len(shape_ex.points)):
-        x_lon[ip] = shape_ex.points[ip][0]
-        y_lat[ip] = shape_ex.points[ip][1]
-    lons,lats=pnyc(x_lon,y_lat,inverse=True)
-    X,Y=m(lons,lats)
-    if not np.isnan(clayshp[j]):
-        plt.fill(X,Y,color=colorsmap(int(np.round(2.55*siltshp[j]))))
-    else:
-        plt.fill(X,Y,color=colorsmap(0))
-fig.savefig('teagasc_silt_test.png')  
-
-
-
+    if not np.ma.is_masked(D[j]):
+        plt.fill(X,Y,color=colorsmap(int(np.round(2.55*D[j]))))        
+    
+X=np.arange(0,100,10)
+Y=np.arange(0,100,10)
+Z=np.zeros((len(X),len(Y)))
+c=plt.pcolormesh(X,Y,Z,cmap=plt.cm.rainbow,vmin=0,vmax=100)
+cb=plt.colorbar(c)
+cb.ax.tick_params(labelsize=20)
+fig.savefig(fnsand,bbox_inches='tight',transparent=True)  

@@ -7,7 +7,6 @@ Created on Fri Jul 26 09:22:17 2019
 import os
 def readconf(fn):
     text = open(fn,'r')
-    nodata=255
     for t in text:
         if not t.startswith('#'):
             a=t.split('=')
@@ -19,9 +18,7 @@ def readconf(fn):
                 if 'Longitude_max' in a[0]:
                     lonmax=float(a[1])
                 if 'Latitude_min' in a[0]:
-                    latmin=float(a[1]) 
-                if  'Pixel_Size' in a[0]:
-                    Pix=float(a[1])
+                    latmin=float(a[1])
                 if 'Shapefile_name' in a[0]:
                     Shp_name=a[1].split('\n')[0]
                     if Shp_name.startswith('~'):
@@ -71,8 +68,6 @@ def readconf(fn):
                          fnclay=fnclay.replace('~',os.path.expanduser('~'))
                     if fnclay.startswith('$HOME'):
                          fnclay=fnclay.replace('$HOME',os.path.expanduser('~'))
-                if 'Nodata' in a[0]:
-                    nodata=float(a[1])
 
     return(Shp_name,Fasso,Fse,lonmin,lonmax,latmin,latmax,projection,ellipse,lat0,
-           lon0,x0,y0,k0,Pix,fnsand,fnclay,nodata)
+           lon0,x0,y0,k0,fnsand,fnclay)
