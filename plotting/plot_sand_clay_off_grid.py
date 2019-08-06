@@ -14,7 +14,7 @@ from pyproj import Proj
 
 import teagasc_soil_series as tss
 import teagasc_asso_to_series as tats
-import read_config as rc 
+import read_config_sand_clay_off_grid as rc 
 plt.switch_backend('agg')
 def get_filepaths(directory,string):
     file_paths = []  # List which will store all of the full filepaths.
@@ -83,7 +83,7 @@ def remove_duplicates(lista):
     return uniq,seen
     
 
-fnconf='config.cfg'
+fnconf='config_sand_clay_off_grid.cfg'
 (Shp_name,Fasso,Fse,lonmin,lonmax,latmin,latmax,projection,ellipse,lat0,lon0,x0,y0,k0,fnsand,fnclay)=rc.readconf(fnconf)
 #read the shapefile
 sf=shp.Reader(Shp_name)    
