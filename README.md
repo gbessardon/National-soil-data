@@ -44,7 +44,7 @@ run the file conversion_national_to_grid/regrid_teagasc_data.py with the paramet
 run the file blending/read_config_blending.py with parameter set in blending/config_blending.cfg.
 
 
-5.Merge the newly created blend into the new dataset :
+5. Merge the newly created blend into the new dataset :
 gdal_merge.py -o [outputfile] -co COMPRESS=DEFLATE [file1] [file2]}} can merge 2 dataset at different coordinates with [file2] data covering [data1] when they overlap. -co COMPRESS=DEFLATE defines the compression format
 
 6. If needed convert the tif file to dir: 
