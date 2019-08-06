@@ -27,21 +27,37 @@ The repository is divided in 4 different subfolders:
 - *plots*: contains different scripts to plot the data at different stages
 
  # How to use it
-1. Reduce the size of your the international dataset around the desired area:
+1. Reduce the size of the reference dataset around the desired area:
 
 To gain computational time it is recommended to use the gdal_translate (https://gdal.org/programs/gdal_translate.html) command:
 gdal_translate -a_srs ’+proj=longlat +datum=WGS84 +no_defs’ -projwin -12 60 -2 50 [inputfile] [outputfile.tif] 
 where -12 60 and -2 50 respectively the upper right and lower right points (or the most north-westerly and
 south easterly points), and store the outputfile.tif file in the input_file directory and run the scripts using it.
 
-2. Conversion of the national data to the desired grid:
+2. Download the national dataset 
+Choose on of the (.shp) files available in http://soils.teagasc.ie and store it in the input files directory
+
+3. Conversion of the national data to the desired grid:
 run the file conversion_national_to_grid/regrid_teagasc_data.py with the parameters set in conversion_national_to_grid/config.cfg.
 
-3. Blend of the national data with the reference dataset:
+4. Blend of the national data with the reference dataset:
 run the file blending/read_config_blending.py with parameter set in blending/config_blending.cfg.
 
 
-4.Merge the newly created blend into the new dataset 
+5.Merge the newly created blend into the new dataset :
+gdal_merge.py -o [outputfile] -co COMPRESS=DEFLATE [file1] [file2]}} can merge 2 dataset at different coordinates with [file2] data covering [data1] when they overlap. -co COMPRESS=DEFLATE defines the compression format
+
+6. If needed convert the tif file to dir: 
+gdal_translate -of EHdr -ot Byte [input.tif] [output.dir] allows to create the .dir file input for SURFEX. Before running it in SURFEX or HARMONIE the corresponding output.hdr file needs to be created as follow:
+one coment line
+nodata: 0 
+north: [HDR_NORTH]
+south: [HDR_SOUTH]
+west:  [HDR_WEST]
+east:  [HDR_EAST]
+rows:  [HDR_ROWS]
+cols:  [HDR_COLS]
+recordtype: recordtype: integer 8 bits
 
 
 
