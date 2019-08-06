@@ -69,5 +69,8 @@ cols:  [HDR_COLS]
 
 recordtype: recordtype: integer 8 bits
 
+7. OPTIONAL plotting directory:
+
+gather different script to display the data at different stage
 
 
