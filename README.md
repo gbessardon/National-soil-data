@@ -48,15 +48,25 @@ run the file blending/read_config_blending.py with parameter set in blending/con
 gdal_merge.py -o [outputfile] -co COMPRESS=DEFLATE [file1] [file2]}} can merge 2 dataset at different coordinates with [file2] data covering [data1] when they overlap. -co COMPRESS=DEFLATE defines the compression format
 
 6. If needed convert the tif file to dir: 
+
 gdal_translate -of EHdr -ot Byte [input.tif] [output.dir] allows to create the .dir file input for SURFEX. Before running it in SURFEX or HARMONIE the corresponding output.hdr file needs to be created as follow:
+
 one coment line
+
 nodata: 0 
+
 north: [HDR_NORTH]
+
 south: [HDR_SOUTH]
+
 west:  [HDR_WEST]
+
 east:  [HDR_EAST]
+
 rows:  [HDR_ROWS]
+
 cols:  [HDR_COLS]
+
 recordtype: recordtype: integer 8 bits
 
 
