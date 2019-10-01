@@ -53,7 +53,7 @@ def get_data(fn,maskn):
     return (Xp,Yp,D,xres,yres)
     
     
-def Blenddata(dataclay,datasand,dataclayt,datasandt):
+def Blenddata(dataclay,datasand,dataclayt,datasandt,noref):
     #"data"-t data from teagasc i.e national database to be coarsed
     #"data"-h data from hswd or the reference database
     Clayblend=255*np.ones(dataclayt.shape)
@@ -68,8 +68,8 @@ def Blenddata(dataclay,datasand,dataclayt,datasandt):
                 Clayblend[i,j]=dataclayt[i,j]
                 Sandblend[i,j]=datasandt[i,j]
                 
-    Clayblend_mask=np.ma.masked_where(Clayblend==255,Clayblend)
-    Sandblend_mask=np.ma.masked_where(Sandblend==255,Sandblend)
+    Clayblend_mask=np.ma.masked_where(Clayblend==noref,Clayblend)
+    Sandblend_mask=np.ma.masked_where(Sandblend==noref,Sandblend)
     return (Clayblend_mask,Sandblend_mask)
 
 
@@ -91,7 +91,7 @@ if (xresref!=xresnat) or (yresref!=yresnat):
 	sandnat,claynat=cor.Coarsendata(claynat,sandnat,clayref,sandref)
 
 
-(Clayblend_mask,Sandblend_mask)=Blenddata(clayref,sandref,claynat,sandnat)
+(Clayblend_mask,Sandblend_mask)=Blenddata(clayref,sandref,claynat,sandnat,noref)
 
 st.Savetiff(Clayblend_mask,Xrefc,Yrefc,fnclay,noref) 
 st.Savetiff(Sandblend_mask,Xrefs,Yrefs,fnsand,noref)   
